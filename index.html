@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Spin Bottle – Truth or Dare</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <div id="start-screen" class="screen active">
+      <h1 class="neon-title">SPIN BOTTLE <br><span>TRUTH OR DARE</span></h1>
+      
+      <div class="players-setup glass">
+        <h3>Select players</h3>
+        <div class="player-count-buttons">
+          <button class="count-btn" data-count="2">2</button>
+          <button class="count-btn" data-count="3">3</button>
+          <button class="count-btn active-count" data-count="4">4</button>
+        </div>
+
+        <div id="player-inputs" class="player-inputs">
+        </div>
+
+        <button id="start-game-btn" class="glow-button">START GAME</button>
+      </div>
+      <div class="footer-note">dark questions inside</div>
+    </div>
+
+    <div id="game-screen" class="screen">
+      <div class="top-players glass" id="player-list"></div>
+
+      <div class="bottle-area">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ff4d6d'/%3E%3Cstop offset='50%25' stop-color='%23c9184a'/%3E%3Cstop offset='100%25' stop-color='%235900b3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23grad)' d='M42 10 L58 10 L64 40 L70 80 L30 80 L36 40 L42 10' /%3E%3Ccircle fill='%23ffe066' cx='50' cy='30' r='10'/%3E%3Ccircle fill='%23f08c00' cx='50' cy='30' r='6'/%3E%3C/svg%3E" 
+             alt="bottle" id="bottle" class="bottle-3d">
+      </div>
+
+      <button id="spin-btn" class="glow-button spin-btn">SPIN BOTTLE</button>
+      <div id="selected-message" class="message neon-message"></div>
+    </div>
+
+    <div id="choice-screen" class="screen">
+      <div class="choice-card glass">
+        <h2 id="selected-player-name" class="glow-text">Player</h2>
+        <p>choose your path</p>
+        <div class="choice-buttons">
+          <button id="truth-btn" class="choice-btn truth">TRUTH</button>
+          <button id="dare-btn" class="choice-btn dare">DARE</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="question-screen" class="screen">
+      <div class="question-card glass" id="question-card">
+        <div class="emoji-big" id="question-emoji">😮</div>
+        <p id="question-text" class="question-text">Click to load question</p>
+        <div class="question-buttons">
+          <button id="next-question" class="small-glow">Next</button>
+          <button id="spin-again" class="small-glow">Spin again</button>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="confetti-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:999;"></canvas>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
