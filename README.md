@@ -60,7 +60,7 @@ spin-bottle-truth-dare-game
 
 Play the game here:
 
-🔗 https://yourusername.github.io/spin-bottle-truth-dare-game/
+🔗 https://shahrishabh1513-jsk.github.io/spin-bottle-truth-dare-game/
 
 ---
 
@@ -109,10 +109,5 @@ If you like this project, please consider giving it a **⭐ on GitHub**!
 
 ---
 
-## 📜 License
-
-This project is **open-source and free to use**.
-
----
-
 ### 👨‍💻 Developed with ❤️ using HTML, CSS & JavaScript
+
