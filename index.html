@@ -1,70 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-  <title>Spin Bottle – Truth or Dare</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎮 Game Intelligence System</title>
   <link rel="stylesheet" href="style.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap"
+    rel="stylesheet">
 </head>
+
 <body>
-  <div id="app" class="app-container">
-    <div id="start-screen" class="screen active">
-      <h1 class="neon-title">SPIN BOTTLE <br><span>TRUTH OR DARE</span></h1>
-      
-      <div class="players-setup glass">
-        <h3>Select players</h3>
-        <div class="player-count-buttons">
-          <button class="count-btn" data-count="2">2</button>
-          <button class="count-btn" data-count="3">3</button>
-          <button class="count-btn active-count" data-count="4">4</button>
-        </div>
-
-        <div id="player-inputs" class="player-inputs">
-        </div>
-
-        <button id="start-game-btn" class="glow-button">START GAME</button>
+  <!-- ====== SPLASH SCREEN ====== -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-content">
+      <div class="splash-icon">🎮</div>
+      <h1 class="splash-title">Game Intelligence System</h1>
+      <div class="splash-subtitle">The AI Party Host</div>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
       </div>
-      <div class="footer-note">dark questions inside</div>
+      <div class="splash-status">Loading game...</div>
+      <button id="enterGameBtn" class="btn-primary splash-btn">🎯 Enter the Game</button>
     </div>
-
-    <div id="game-screen" class="screen">
-      <div class="top-players glass" id="player-list"></div>
-
-      <div class="bottle-area">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ff4d6d'/%3E%3Cstop offset='50%25' stop-color='%23c9184a'/%3E%3Cstop offset='100%25' stop-color='%235900b3'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23grad)' d='M42 10 L58 10 L64 40 L70 80 L30 80 L36 40 L42 10' /%3E%3Ccircle fill='%23ffe066' cx='50' cy='30' r='10'/%3E%3Ccircle fill='%23f08c00' cx='50' cy='30' r='6'/%3E%3C/svg%3E" 
-             alt="bottle" id="bottle" class="bottle-3d">
-      </div>
-
-      <button id="spin-btn" class="glow-button spin-btn">SPIN BOTTLE</button>
-      <div id="selected-message" class="message neon-message"></div>
-    </div>
-
-    <div id="choice-screen" class="screen">
-      <div class="choice-card glass">
-        <h2 id="selected-player-name" class="glow-text">Player</h2>
-        <p>choose your path</p>
-        <div class="choice-buttons">
-          <button id="truth-btn" class="choice-btn truth">TRUTH</button>
-          <button id="dare-btn" class="choice-btn dare">DARE</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="question-screen" class="screen">
-      <div class="question-card glass" id="question-card">
-        <div class="emoji-big" id="question-emoji">😮</div>
-        <p id="question-text" class="question-text">Click to load question</p>
-        <div class="question-buttons">
-          <button id="next-question" class="small-glow">Next</button>
-          <button id="spin-again" class="small-glow">Spin again</button>
-        </div>
-      </div>
-    </div>
-
-    <canvas id="confetti-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:999;"></canvas>
+    <div class="splash-particles" id="splashParticles"></div>
   </div>
 
+  <!-- ====== MAIN GAME CONTAINER ====== -->
+  <div id="gameContainer" class="game-container hidden">
+    <!-- Header -->
+    <header class="game-header">
+      <div class="logo">🎮 GIS</div>
+      <div class="game-status" id="gameStatus">
+        <span class="status-dot"></span>
+        <span id="statusText">Ready</span>
+      </div>
+      <div class="header-controls">
+        <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
+        <button class="icon-btn" id="helpBtn" title="Help">❓</button>
+      </div>
+    </header>
+
+    <!-- ====== MAIN MENU ====== -->
+    <div id="mainMenu" class="main-menu">
+      <div class="menu-content">
+        <div class="menu-title">
+          <span class="menu-icon">🎮</span>
+          <h2>Game Intelligence System</h2>
+          <p class="menu-subtitle">An unpredictable AI party host</p>
+        </div>
+
+        <!-- Player Setup -->
+        <div class="player-setup">
+          <div class="setup-section">
+            <h3>👥 Players</h3>
+            <div class="player-count-control">
+              <button class="btn-circle" id="decreasePlayers">−</button>
+              <span class="player-count-display" id="playerCountDisplay">2</span>
+              <button class="btn-circle" id="increasePlayers">+</button>
+            </div>
+            <p class="player-count-hint" id="playerCountHint">2 Players • Couple Mode 💕</p>
+          </div>
+
+          <div class="setup-section">
+            <h3>✏️ Player Names</h3>
+            <div id="playerNameInputs" class="player-name-inputs">
+              <!-- Dynamically generated -->
+            </div>
+          </div>
+
+          <div class="setup-section bot-options">
+            <h3>🤖 Bot Personalities</h3>
+            <div class="bot-selectors" id="botSelectors">
+              <!-- Dynamically generated -->
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-start" id="startGameBtn">
+          🚀 Start Game
+        </button>
+
+        <div class="game-mode-indicator" id="gameModeIndicator">
+          <span class="mode-badge party-mode">🎉 Party Mode</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== GAME PLAY AREA ====== -->
+    <div id="gamePlayArea" class="game-play-area hidden">
+      <!-- Round Info -->
+      <div class="round-info">
+        <div class="round-badge">
+          <span class="round-label">ROUND</span>
+          <span class="round-number" id="roundNumber">1</span>
+        </div>
+        <div class="player-turn">
+          <span class="turn-label">🎯</span>
+          <span class="turn-player" id="turnPlayer">Player 1</span>
+        </div>
+        <div class="intensity-meter">
+          <span class="intensity-label">🔥</span>
+          <div class="meter-bar">
+            <div class="meter-fill" id="intensityFill" style="width: 10%"></div>
+          </div>
+          <span class="intensity-value" id="intensityValue">1</span>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="question-card" id="questionCard">
+        <div class="question-category" id="questionCategory">🎯 Ice Breaker</div>
+        <div class="question-text" id="questionText">
+          What's your favorite childhood memory?
+        </div>
+        <div class="question-actions">
+          <button class="btn-secondary btn-answer" id="answerBtn">💬 Answer</button>
+          <button class="btn-secondary btn-dare" id="dareBtn">⚡ Dare</button>
+          <button class="btn-secondary btn-skip" id="skipBtn">⏭️ Skip</button>
+        </div>
+        <div class="question-timer" id="questionTimer">
+          <div class="timer-ring">
+            <svg viewBox="0 0 120 120">
+              <circle class="timer-bg" cx="60" cy="60" r="54" />
+              <circle class="timer-fg" cx="60" cy="60" r="54" id="timerCircle" />
+            </svg>
+            <span class="timer-text" id="timerText">30</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bot Reaction -->
+      <div class="bot-reaction hidden" id="botReaction">
+        <div class="reaction-avatar" id="reactionAvatar">🤖</div>
+        <div class="reaction-text" id="reactionText">"Nope, I'm definitely not doing that."</div>
+      </div>
+
+      <!-- Special Event Banner -->
+      <div class="special-event hidden" id="specialEvent">
+        <div class="event-content">
+          <span class="event-icon">💀</span>
+          <span class="event-text" id="eventText">Chaos Mode Activated</span>
+        </div>
+      </div>
+
+      <!-- Players List -->
+      <div class="players-list" id="playersList">
+        <!-- Dynamically generated -->
+      </div>
+
+      <!-- Game Controls -->
+      <div class="game-controls">
+        <button class="btn-secondary btn-next" id="nextBtn">▶ Next Player</button>
+        <button class="btn-secondary btn-end" id="endGameBtn">⏹ End Game</button>
+      </div>
+    </div>
+
+    <!-- ====== RESULTS SCREEN ====== -->
+    <div id="resultsScreen" class="results-screen hidden">
+      <div class="results-content">
+        <h2>🏆 Game Over!</h2>
+        <div class="results-stats" id="resultsStats">
+          <!-- Dynamically generated -->
+        </div>
+        <div class="results-players" id="resultsPlayers">
+          <!-- Dynamically generated -->
+        </div>
+        <button class="btn-primary" id="playAgainBtn">🔄 Play Again</button>
+        <button class="btn-secondary" id="menuBtn">🏠 Main Menu</button>
+      </div>
+    </div>
+
+    <!-- ====== MODALS ====== -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <span class="modal-close" id="modalClose">×</span>
+        <h3 id="modalTitle">Modal</h3>
+        <p id="modalBody">Modal content goes here.</p>
+        <button class="btn-primary" id="modalAction">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="questions.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

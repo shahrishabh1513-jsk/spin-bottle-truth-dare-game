@@ -1,330 +1,892 @@
-const truthQuestions = [
-  "Who was your first crush?",
-  "What is your biggest fear?",
-  "Have you ever lied to a best friend?",
-  "Most embarrassing moment?",
-  "Who do you trust the most?",
-  "Dream travel destination?",
-  "Which subject do you hate most?",
-  "Have you ever slept during class?",
-  "Your guilty pleasure?",
-  "Worst exam result?",
-  "Have you ever skipped class?",
-  "Who in this group would you date?",
-  "Have you ever broken someone's heart?",
-  "What's your darkest secret?",
-  "Betrayed a friend's trust?",
-  "Secretly hated someone here?",
-  "Something you've never told anyone?",
-  "Funniest childhood memory?",
-  "Ever sang karaoke alone?",
-  "First kiss story?",
-  "Last person you stalked online?",
-  "Ever vomited from alcohol?",
-  "Weirdest dream?",
-  "A conspiracy you believe?",
-  "How much money is in your bank?",
-  "How often do you change bedsheets?",
-  "Most awkward date?",
-  "Most embarassing photo exists?",
-  "Have you ever cheated in exam?",
-  "Do you sing in shower?",
-  "Ever stolen something?",
-  "weirdest toilet story?",
-  "Hours spent gaming in a week?",
-  "Have you ever sent a nude?",
-  "What lie do you tell most?",
-  "Do you have a secret kid?",
-  "Ever kissed someone in this room?",
-  "Who is your secret ex?",
-  "Most taboo thought?",
-  "Ever cheated on partner?",
-  "Would you date two people at once?",
-  "Have you ever been in love with two?",
-  "What's the worst thing you did for money?",
-  "Fart in public story?",
-  "Ever seen a ghost?",
-  "Age of first kiss?",
-  "Do you believe in soulmates?",
-  "What teacher did you have crush on?",
-  "Do you love your parents?",
-  "What's the most illegal thing you did?"
-];
-const dareTasks = [
-  "Sing loudly for 15 seconds.",
-  "Dance without music.",
-  "Act like a baby.",
-  "Walk like a model.",
-  "Imitate a teacher.",
-  "Speak in an accent for 1 min.",
-  "Do 15 jumping jacks.",
-  "Pretend you're a tour guide.",
-  "Tell a fake ghost story.",
-  "Do your funniest laugh.",
-  "Reveal the last photo in your phone.",
-  "Send random emoji to your crush.",
-  "Read your last message aloud.",
-  "Call a friend & say 'I miss you'.",
-  "Reveal your last Google search.",
-  "Drink a weird mixture.",
-  "Act like a chicken for 10s.",
-  "Give a kiss to the person on left.",
-  "Roar like a lion.",
-  "Meow like a cat.",
-  "Post an ugly selfie on story.",
-  "Text your ex 'I love you'.",
-  "Call your mom and say 'I'm pregnant'.",
-  "Eat a banana without hands.",
-  "Smell someone's shoe.",
-  "Do the floss dance.",
-  "Make a broom dance with you.",
-  "Rap a song for 20s.",
-  "Read a random page dramatically.",
-  "Show your internet history.",
-  "Show your chat with best friend.",
-  "Reveal your crush name.",
-  "Give your phone to someone.",
-  "Do 10 pushups.",
-  "Propose to someone in room.",
-  "Air guitar.",
-  "Imitate a monkey.",
-  "Blow a kiss to mirror.",
-  "Swap shirt with someone.",
-  "Tell a dark secret.",
-  "Search something embarrassing.",
-  "Say something dirty.",
-  "Whisper a dark thought to player.",
-  "Lick your elbow.",
-  "Chug a glass of water.",
-  "Vogue walk.",
-  "Smell armpit and react.",
-  "Crow like a rooster.",
-  "Make a funny sound.",
-  "Inflate an imaginary balloon."
-];
-while(truthQuestions.length < 50) truthQuestions.push("What's your favorite pizza topping?");
-while(dareTasks.length < 50) dareTasks.push("Do a silly dance.");
+// ============= STATE MANAGEMENT =============
+let gameState = {
+    players: [],
+    currentRound: 0,
+    currentPlayerIndex: 0,
+    usedQuestions: [],
+    mode: 'party',
+    specialEventActive: false,
+    chaosMode: false,
+    gameLog: [],
+    comboCounter: 0,
+    isGameActive: false,
+    currentQuestion: null,
+    timerInterval: null,
+    timeRemaining: 30,
+    skipCount: 0,
+    maxSkips: 3,
+    isProcessing: false
+};
 
-let players = [];
-let activePlayerIndex = 0;
-let currentQuestionType = 'truth';
-let currentQuestion = '';
-
-let truthPool = [...truthQuestions];
-let darePool = [...dareTasks];
-function shuffleArray(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-function reshufflePools() {
-  truthPool = shuffleArray([...truthQuestions]);
-  darePool = shuffleArray([...dareTasks]);
-}
-reshufflePools();
-
-const startScreen = document.getElementById('start-screen');
-const gameScreen = document.getElementById('game-screen');
-const choiceScreen = document.getElementById('choice-screen');
-const questionScreen = document.getElementById('question-screen');
-const playerInputsDiv = document.getElementById('player-inputs');
-const startBtn = document.getElementById('start-game-btn');
-const playerListDiv = document.getElementById('player-list');
-const spinBtn = document.getElementById('spin-btn');
-const bottle = document.getElementById('bottle');
-const selectedMsg = document.getElementById('selected-message');
-const selectedPlayerNameSpan = document.getElementById('selected-player-name');
-const truthBtn = document.getElementById('truth-btn');
-const dareBtn = document.getElementById('dare-btn');
-const questionText = document.getElementById('question-text');
-const questionEmoji = document.getElementById('question-emoji');
-const nextQuestion = document.getElementById('next-question');
-const spinAgain = document.getElementById('spin-again');
-
-let playerCount = 4;
-
-function playSound(type) {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+// ============= DOM REFERENCES =============
+const DOM = {
+    // Splash
+    splash: document.getElementById('splashScreen'),
+    enterBtn: document.getElementById('enterGameBtn'),
+    loader: document.querySelector('.loader-bar'),
+    status: document.querySelector('.splash-status'),
     
-    if (type === 'spin') {
-      osc.frequency.value = 220;
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-      osc.frequency.setValueAtTime(220, audioCtx.currentTime);
-      osc.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.5);
-    } else if (type === 'click') {
-      osc.frequency.value = 800;
-      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+    // Main
+    container: document.getElementById('gameContainer'),
+    
+    // Menu
+    mainMenu: document.getElementById('mainMenu'),
+    playerCountDisplay: document.getElementById('playerCountDisplay'),
+    playerCountHint: document.getElementById('playerCountHint'),
+    playerNameInputs: document.getElementById('playerNameInputs'),
+    botSelectors: document.getElementById('botSelectors'),
+    startBtn: document.getElementById('startGameBtn'),
+    modeIndicator: document.getElementById('gameModeIndicator'),
+    decreaseBtn: document.getElementById('decreasePlayers'),
+    increaseBtn: document.getElementById('increasePlayers'),
+    
+    // Game
+    playArea: document.getElementById('gamePlayArea'),
+    roundNumber: document.getElementById('roundNumber'),
+    turnPlayer: document.getElementById('turnPlayer'),
+    intensityFill: document.getElementById('intensityFill'),
+    intensityValue: document.getElementById('intensityValue'),
+    questionCategory: document.getElementById('questionCategory'),
+    questionText: document.getElementById('questionText'),
+    answerBtn: document.getElementById('answerBtn'),
+    dareBtn: document.getElementById('dareBtn'),
+    skipBtn: document.getElementById('skipBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    endBtn: document.getElementById('endGameBtn'),
+    playersList: document.getElementById('playersList'),
+    botReaction: document.getElementById('botReaction'),
+    reactionAvatar: document.getElementById('reactionAvatar'),
+    reactionText: document.getElementById('reactionText'),
+    specialEvent: document.getElementById('specialEvent'),
+    eventText: document.getElementById('eventText'),
+    timerText: document.getElementById('timerText'),
+    timerCircle: document.getElementById('timerCircle'),
+    
+    // Results
+    results: document.getElementById('resultsScreen'),
+    resultsStats: document.getElementById('resultsStats'),
+    resultsPlayers: document.getElementById('resultsPlayers'),
+    playAgainBtn: document.getElementById('playAgainBtn'),
+    menuBtn: document.getElementById('menuBtn'),
+    
+    // Modal
+    modal: document.getElementById('modal'),
+    modalTitle: document.getElementById('modalTitle'),
+    modalBody: document.getElementById('modalBody'),
+    modalAction: document.getElementById('modalAction'),
+    modalClose: document.getElementById('modalClose'),
+    
+    // Status
+    statusText: document.getElementById('statusText'),
+    statusDot: document.querySelector('.status-dot')
+};
+
+let playerCount = 2;
+let playerNames = ['Player 1', 'Player 2'];
+let botPersonalities = {};
+
+// ============= SPLASH SCREEN =============
+function initSplash() {
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 8 + 2;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            DOM.status.textContent = 'Ready to play! 🎮';
+            DOM.enterBtn.classList.remove('hidden');
+        }
+        DOM.loader.style.width = progress + '%';
+        if (progress < 30) DOM.status.textContent = 'Loading game engine...';
+        else if (progress < 60) DOM.status.textContent = 'Generating questions...';
+        else if (progress < 80) DOM.status.textContent = 'Setting up AI...';
+        else DOM.status.textContent = 'Almost ready...';
+    }, 200);
+    
+    // Particles
+    const particlesContainer = document.getElementById('splashParticles');
+    for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDuration = (Math.random() * 10 + 5) + 's';
+        particle.style.animationDelay = (Math.random() * 5) + 's';
+        particle.style.width = (Math.random() * 4 + 2) + 'px';
+        particle.style.height = particle.style.width;
+        particle.style.opacity = Math.random() * 0.5 + 0.1;
+        particlesContainer.appendChild(particle);
     }
-    osc.start();
-    osc.stop(audioCtx.currentTime + (type==='spin'?0.8:0.1));
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  } catch (e) { }
-}
-
-const canvas = document.getElementById('confetti-canvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-function confetti() {
-  for (let i=0; i<30; i++) particles.push({ x: Math.random()*canvas.width, y: -10, size: Math.random()*6+4, speed: Math.random()*6+3, color: `hsl(${Math.random()*360},80%,60%)` });
-  if (!window.confettiInterval) {
-    window.confettiInterval = setInterval(() => {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      particles = particles.filter(p => p.y < canvas.height+20);
-      particles.forEach(p => { p.y += p.speed; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size,0,Math.PI*2); ctx.fill(); });
-      if (particles.length===0) { clearInterval(window.confettiInterval); window.confettiInterval=null; }
-    }, 30);
-  }
-}
-
-function renderPlayerInputs(count) {
-  let html = '';
-  for (let i=0; i<count; i++) {
-    html += `<div class="player-row" data-index="${i}">
-      <input type="text" id="pname${i}" placeholder="Player ${i+1} name" value="P${i+1}">
-      <div class="avatar-select" id="avatar-${i}">
-        ${['🤖','🦊','🐼','🐯'].map(av => 
-          `<button class="avatar-option ${i===0 && av==='😀' ? 'selected' : ''}" data-avatar="${av}">${av}</button>`
-        ).join('')}
-      </div>
-    </div>`;
-  }
-  playerInputsDiv.innerHTML = html;
-  document.querySelectorAll('.avatar-option').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const parentRow = btn.closest('.player-row');
-      parentRow.querySelectorAll('.avatar-option').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      playSound('click');
+    
+    DOM.enterBtn.addEventListener('click', () => {
+        DOM.splash.classList.add('fade-out');
+        setTimeout(() => {
+            DOM.splash.style.display = 'none';
+            DOM.container.classList.remove('hidden');
+            initMenu();
+        }, 800);
     });
-  });
-}
-renderPlayerInputs(4);
-
-document.querySelectorAll('.count-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('active-count'));
-    btn.classList.add('active-count');
-    playerCount = parseInt(btn.dataset.count);
-    renderPlayerInputs(playerCount);
-    playSound('click');
-  });
-});
-
-startBtn.addEventListener('click', () => {
-  players = [];
-  for (let i=0; i<playerCount; i++) {
-    const nameInput = document.getElementById(`pname${i}`);
-    const name = nameInput ? nameInput.value.trim() : `P${i+1}`;
-    const selectedAvatar = document.querySelector(`#avatar-${i} .avatar-option.selected`);
-    const avatar = selectedAvatar ? selectedAvatar.dataset.avatar : '😀';
-    players.push({ name: name || `P${i+1}`, avatar });
-  }
-  activePlayerIndex = 0;
-  renderPlayerBadges();
-  showScreen(gameScreen);
-  playSound('click');
-});
-
-function renderPlayerBadges() {
-  let html = '';
-  players.forEach((p, idx) => {
-    html += `<div class="player-badge ${idx===activePlayerIndex ? 'active-player' : ''}" data-idx="${idx}">${p.avatar} ${p.name}</div>`;
-  });
-  playerListDiv.innerHTML = html;
 }
 
-function showScreen(screen) {
-  [startScreen, gameScreen, choiceScreen, questionScreen].forEach(s => s.classList.remove('active'));
-  screen.classList.add('active');
-  if (screen === questionScreen) {
-    confetti();
-  }
-}
-
-let spinning = false;
-spinBtn.addEventListener('click', () => {
-  if (spinning) return;
-  spinning = true;
-  playSound('spin');
-  const spinDuration = 2000;
-  const startRot = 0;
-  const targetRot = 720 + Math.floor(Math.random() * 720);
-  const startTime = Date.now();
-  
-  function animateSpin() {
-    const elapsed = Date.now() - startTime;
-    const progress = Math.min(elapsed / spinDuration, 1);
-    const easeOut = 1 - Math.pow(1 - progress, 3);
-    const currentRot = startRot + targetRot * easeOut;
-    bottle.style.transform = `rotate(${currentRot}deg)`;
+// ============= MENU =============
+function initMenu() {
+    updatePlayerCount();
+    setupPlayerNameInputs();
+    setupBotSelectors();
     
-    if (progress < 1) {
-      requestAnimationFrame(animateSpin);
-    } else {
-      spinning = false;
-      const randomIdx = Math.floor(Math.random() * players.length);
-      activePlayerIndex = randomIdx;
-      renderPlayerBadges();
-      selectedMsg.innerText = `${players[activePlayerIndex].name} got selected!`;
-      playSound('click');
-      setTimeout(() => {
-        selectedPlayerNameSpan.innerText = `${players[activePlayerIndex].avatar} ${players[activePlayerIndex].name}`;
-        showScreen(choiceScreen);
-      }, 400);
+    DOM.decreaseBtn.addEventListener('click', () => {
+        if (playerCount > 1) {
+            playerCount--;
+            updatePlayerCount();
+        }
+    });
+    
+    DOM.increaseBtn.addEventListener('click', () => {
+        if (playerCount < 6) {
+            playerCount++;
+            updatePlayerCount();
+        }
+    });
+    
+    DOM.startBtn.addEventListener('click', startGame);
+}
+
+function updatePlayerCount() {
+    DOM.playerCountDisplay.textContent = playerCount;
+    playerNames = [];
+    for (let i = 0; i < playerCount; i++) {
+        playerNames.push(`Player ${i + 1}`);
     }
-  }
-  requestAnimationFrame(animateSpin);
+    setupPlayerNameInputs();
+    setupBotSelectors();
+    
+    // Update mode hint
+    if (playerCount === 2) {
+        DOM.playerCountHint.textContent = '2 Players • Couple Mode 💕';
+        DOM.modeIndicator.innerHTML = '<span class="mode-badge couple-mode">💕 Couple Mode</span>';
+        gameState.mode = 'couple';
+    } else {
+        DOM.playerCountHint.textContent = `${playerCount} Players • Party Mode 🎉`;
+        DOM.modeIndicator.innerHTML = '<span class="mode-badge party-mode">🎉 Party Mode</span>';
+        gameState.mode = 'party';
+    }
+}
+
+function setupPlayerNameInputs() {
+    DOM.playerNameInputs.innerHTML = '';
+    for (let i = 0; i < playerCount; i++) {
+        const row = document.createElement('div');
+        row.className = 'name-input-row';
+        row.innerHTML = `
+            <label>P${i + 1}</label>
+            <input type="text" value="${playerNames[i] || `Player ${i + 1}`}" 
+                   data-index="${i}" placeholder="Enter name...">
+            ${i >= 2 ? '<span class="bot-badge">🤖</span>' : ''}
+        `;
+        const input = row.querySelector('input');
+        input.addEventListener('input', (e) => {
+            playerNames[i] = e.target.value || `Player ${i + 1}`;
+        });
+        DOM.playerNameInputs.appendChild(row);
+    }
+}
+
+function setupBotSelectors() {
+    DOM.botSelectors.innerHTML = '';
+    const personalities = ['Shy', 'Savage', 'Romantic', 'Chaotic', 'Funny'];
+    const emojis = ['😊', '😈', '🥰', '🤪', '😂'];
+    
+    for (let i = 2; i < playerCount; i++) {
+        const container = document.createElement('div');
+        container.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 4px;';
+        container.innerHTML = `<span style="font-size: 13px; color: var(--text-secondary);">${playerNames[i] || `Player ${i+1}`}:</span>`;
+        
+        personalities.forEach((name, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'bot-selector';
+            btn.dataset.player = i;
+            btn.dataset.personality = name.toLowerCase();
+            btn.textContent = `${emojis[idx]} ${name}`;
+            if (idx === 0) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.bot-selector').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                botPersonalities[i] = name.toLowerCase();
+            });
+            container.appendChild(btn);
+        });
+        DOM.botSelectors.appendChild(container);
+        
+        // Set default
+        botPersonalities[i] = 'shy';
+    }
+}
+
+// ============= GAME START =============
+function startGame() {
+    // Collect final names
+    const inputs = DOM.playerNameInputs.querySelectorAll('input');
+    inputs.forEach((input, index) => {
+        playerNames[index] = input.value || `Player ${index + 1}`;
+    });
+    
+    // Create players
+    gameState.players = [];
+    for (let i = 0; i < playerCount; i++) {
+        const isBot = i >= 2;
+        const personality = isBot ? (botPersonalities[i] || 'shy') : null;
+        gameState.players.push({
+            name: playerNames[i] || `Player ${i + 1}`,
+            isBot: isBot,
+            personality: personality,
+            score: 0,
+            isActive: true
+        });
+    }
+    
+    // Set mode
+    gameState.mode = playerCount === 2 ? 'couple' : 'party';
+    gameState.currentRound = 0;
+    gameState.currentPlayerIndex = 0;
+    gameState.usedQuestions = [];
+    gameState.gameLog = [];
+    gameState.isGameActive = true;
+    gameState.skipCount = 0;
+    gameState.isProcessing = false;
+    
+    // Hide menu, show game
+    DOM.mainMenu.classList.add('hidden');
+    DOM.playArea.classList.remove('hidden');
+    DOM.results.classList.add('hidden');
+    
+    // Start first round
+    nextRound();
+}
+
+// ============= GAME ROUNDS =============
+function nextRound() {
+    if (!gameState.isGameActive) return;
+    
+    gameState.currentRound++;
+    DOM.roundNumber.textContent = gameState.currentRound;
+    
+    // Check if game should end
+    if (gameState.currentRound > 30) {
+        endGame();
+        return;
+    }
+    
+    // Update intensity
+    const intensity = Math.min(Math.floor(gameState.currentRound / 2) + 1, 10);
+    DOM.intensityFill.style.width = (intensity * 10) + '%';
+    DOM.intensityValue.textContent = intensity;
+    
+    // Get next player
+    if (gameState.specialEventActive) {
+        // If special event handled, reset
+        gameState.specialEventActive = false;
+    } else {
+        gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+    }
+    
+    const player = gameState.players[gameState.currentPlayerIndex];
+    DOM.turnPlayer.textContent = player.name;
+    
+    // Update players list
+    updatePlayersList();
+    
+    // Select question
+    selectQuestion();
+    
+    // Update status
+    DOM.statusText.textContent = `${player.name}'s turn`;
+    DOM.statusDot.className = 'status-dot playing';
+    
+    // Start timer
+    startTimer();
+}
+
+function selectQuestion() {
+    // Get weighted category
+    const category = getWeightedCategory(
+        gameState.currentRound, 
+        gameState.players.length, 
+        gameState.mode
+    );
+    
+    // Get questions for this round
+    let availableQuestions = getQuestionsByRound(gameState.currentRound)
+        .filter(q => q.category === category || Math.random() < 0.3) // Some randomness
+        .filter(q => !gameState.usedQuestions.includes(q.id));
+    
+    // If no questions available, get any question
+    if (availableQuestions.length === 0) {
+        availableQuestions = getRandomQuestion(gameState.usedQuestions);
+        if (availableQuestions) availableQuestions = [availableQuestions];
+    }
+    
+    if (availableQuestions.length === 0) {
+        // If truly no questions, end game
+        endGame();
+        return;
+    }
+    
+    // Pick random question
+    const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+    gameState.currentQuestion = question;
+    gameState.usedQuestions.push(question.id);
+    
+    // Display question
+    const categoryEmojis = {
+        'cute': '🥰',
+        'funny': '😂',
+        'party': '🎉',
+        'adventure': '🏔️',
+        'friendship': '🤝',
+        'romantic': '💕',
+        'couple': '💑',
+        'flirty': '😉',
+        'embarrassing': '😳',
+        'deep_talk': '🧠',
+        'naughty': '😈',
+        'dark_humor': '💀',
+        'relationship': '💞',
+        'ice_breaker': '❄️',
+        'spicy': '🌶️'
+    };
+    
+    const emoji = categoryEmojis[question.category] || '🎯';
+    const categoryName = question.category.replace('_', ' ').toUpperCase();
+    DOM.questionCategory.textContent = `${emoji} ${categoryName}`;
+    DOM.questionText.textContent = question.text;
+    
+    // Show/hide buttons based on question type
+    if (question.isDare) {
+        DOM.dareBtn.style.display = 'none';
+        DOM.answerBtn.textContent = '⚡ Accept Dare';
+    } else {
+        DOM.dareBtn.style.display = 'inline-block';
+        DOM.answerBtn.textContent = '💬 Answer';
+    }
+    
+    // Check for special event
+    const event = triggerSpecialEvent();
+    if (event && gameState.currentRound > 3) {
+        showSpecialEvent(event);
+    }
+    
+    // Bot reaction if bot's turn
+    const player = gameState.players[gameState.currentPlayerIndex];
+    if (player.isBot) {
+        setTimeout(() => {
+            handleBotTurn(player);
+        }, 1500);
+    } else {
+        // Hide bot reaction for human
+        DOM.botReaction.classList.add('hidden');
+    }
+}
+
+function startTimer() {
+    clearInterval(gameState.timerInterval);
+    gameState.timeRemaining = 30;
+    DOM.timerText.textContent = '30';
+    
+    const circumference = 2 * Math.PI * 54;
+    DOM.timerCircle.style.strokeDasharray = circumference;
+    DOM.timerCircle.style.strokeDashoffset = 0;
+    
+    gameState.timerInterval = setInterval(() => {
+        gameState.timeRemaining--;
+        DOM.timerText.textContent = gameState.timeRemaining;
+        
+        const progress = gameState.timeRemaining / 30;
+        const offset = circumference * (1 - progress);
+        DOM.timerCircle.style.strokeDashoffset = offset;
+        
+        if (gameState.timeRemaining <= 5) {
+            DOM.timerCircle.style.stroke = '#FF6B6B';
+        } else {
+            DOM.timerCircle.style.stroke = '#6C3CE1';
+        }
+        
+        if (gameState.timeRemaining <= 0) {
+            clearInterval(gameState.timerInterval);
+            // Auto-skip if no answer
+            handleTimeout();
+        }
+    }, 1000);
+}
+
+function handleTimeout() {
+    if (gameState.isProcessing) return;
+    gameState.isProcessing = true;
+    
+    const player = gameState.players[gameState.currentPlayerIndex];
+    showModal('⏰ Time\'s Up!', `${player.name} ran out of time! Moving to next player.`);
+    
+    setTimeout(() => {
+        closeModal();
+        gameState.isProcessing = false;
+        nextRound();
+    }, 2000);
+}
+
+// ============= PLAYER ACTIONS =============
+function handleAnswer() {
+    if (gameState.isProcessing) return;
+    const player = gameState.players[gameState.currentPlayerIndex];
+    if (player.isBot) return;
+    
+    gameState.isProcessing = true;
+    clearInterval(gameState.timerInterval);
+    
+    const question = gameState.currentQuestion;
+    if (question.isDare) {
+        // Handle dare
+        player.score += 2;
+        showModal('⚡ Dare Accepted!', `${player.name} accepted the dare and gained 2 points!`);
+        addLog(`${player.name} accepted a dare: ${question.text}`);
+    } else {
+        player.score += 1;
+        showModal('💬 Answered!', `${player.name} answered the question and gained 1 point!`);
+        addLog(`${player.name} answered: ${question.text}`);
+    }
+    
+    updatePlayersList();
+    
+    setTimeout(() => {
+        closeModal();
+        gameState.isProcessing = false;
+        nextRound();
+    }, 2000);
+}
+
+function handleDare() {
+    if (gameState.isProcessing) return;
+    const player = gameState.players[gameState.currentPlayerIndex];
+    if (player.isBot) return;
+    
+    gameState.isProcessing = true;
+    clearInterval(gameState.timerInterval);
+    
+    // Find a dare question
+    const dareQuestions = getQuestionsByRound(gameState.currentRound)
+        .filter(q => q.isDare && !gameState.usedQuestions.includes(q.id));
+    
+    if (dareQuestions.length > 0) {
+        const dare = dareQuestions[Math.floor(Math.random() * dareQuestions.length)];
+        gameState.usedQuestions.push(dare.id);
+        gameState.currentQuestion = dare;
+        DOM.questionText.textContent = dare.text;
+        DOM.questionCategory.textContent = '⚡ DARE';
+        DOM.answerBtn.textContent = '⚡ Accept Dare';
+        DOM.dareBtn.style.display = 'none';
+        
+        showModal('⚡ New Dare!', `A new dare has been issued for ${player.name}!`);
+        
+        setTimeout(() => {
+            closeModal();
+            gameState.isProcessing = false;
+            // Let them answer the dare
+        }, 1500);
+    } else {
+        showModal('😅 No Dares Available', 'There are no dares available right now. Try answering the question!');
+        setTimeout(() => {
+            closeModal();
+            gameState.isProcessing = false;
+        }, 1500);
+    }
+}
+
+function handleSkip() {
+    if (gameState.isProcessing) return;
+    const player = gameState.players[gameState.currentPlayerIndex];
+    if (player.isBot) return;
+    
+    gameState.skipCount++;
+    if (gameState.skipCount >= gameState.maxSkips) {
+        showModal('🚫 No More Skips!', 'You\'ve used all your skips! You must answer or accept a dare.');
+        setTimeout(() => {
+            closeModal();
+        }, 2000);
+        return;
+    }
+    
+    gameState.isProcessing = true;
+    clearInterval(gameState.timerInterval);
+    
+    player.score -= 1;
+    showModal('⏭️ Skipped!', `${player.name} skipped the question. -1 point! (${gameState.skipCount}/${gameState.maxSkips} skips used)`);
+    addLog(`${player.name} skipped a question`);
+    
+    updatePlayersList();
+    
+    setTimeout(() => {
+        closeModal();
+        gameState.isProcessing = false;
+        nextRound();
+    }, 2000);
+}
+
+// ============= BOT AI =============
+function handleBotTurn(player) {
+    if (!gameState.isGameActive) return;
+    if (!player.isBot) return;
+    
+    clearInterval(gameState.timerInterval);
+    gameState.isProcessing = true;
+    
+    // Show bot reaction
+    const question = gameState.currentQuestion;
+    const reaction = getBotReaction(player.personality, question);
+    DOM.botReaction.classList.remove('hidden');
+    DOM.reactionAvatar.textContent = getBotAvatar(player.personality);
+    DOM.reactionText.textContent = `"${reaction}"`;
+    
+    // Bot decision making based on personality
+    setTimeout(() => {
+        const decision = makeBotDecision(player, question);
+        
+        if (decision === 'answer') {
+            player.score += question.isDare ? 2 : 1;
+            addLog(`${player.name} (bot) answered: ${question.text}`);
+            showBotAction(player, 'answered the question! ✅');
+        } else if (decision === 'dare') {
+            player.score += 2;
+            addLog(`${player.name} (bot) accepted a dare`);
+            showBotAction(player, 'accepted the dare! ⚡');
+        } else if (decision === 'skip') {
+            player.score -= 1;
+            addLog(`${player.name} (bot) skipped`);
+            showBotAction(player, 'skipped the question. ⏭️');
+        }
+        
+        updatePlayersList();
+        
+        setTimeout(() => {
+            DOM.botReaction.classList.add('hidden');
+            gameState.isProcessing = false;
+            nextRound();
+        }, 2000);
+    }, 1500);
+}
+
+function makeBotDecision(player, question) {
+    const personality = player.personality || 'shy';
+    const intensity = Math.min(Math.floor(gameState.currentRound / 2) + 1, 10);
+    
+    // Base probabilities
+    let answerProb = 0.5;
+    let dareProb = 0.2;
+    let skipProb = 0.3;
+    
+    // Adjust based on personality
+    switch(personality) {
+        case 'savage':
+            answerProb = 0.6;
+            dareProb = 0.3;
+            skipProb = 0.1;
+            break;
+        case 'shy':
+            answerProb = 0.4;
+            dareProb = 0.1;
+            skipProb = 0.5;
+            break;
+        case 'romantic':
+            answerProb = 0.7;
+            dareProb = 0.1;
+            skipProb = 0.2;
+            break;
+        case 'chaotic':
+            answerProb = 0.3;
+            dareProb = 0.5;
+            skipProb = 0.2;
+            break;
+        case 'funny':
+            answerProb = 0.5;
+            dareProb = 0.25;
+            skipProb = 0.25;
+            break;
+    }
+    
+    // Adjust for question type
+    if (question.isDare) {
+        answerProb = 0;
+        dareProb = 0.7;
+        skipProb = 0.3;
+    }
+    
+    // Adjust for intensity
+    if (intensity > 7) {
+        skipProb += 0.2;
+        answerProb -= 0.1;
+        dareProb -= 0.1;
+    }
+    
+    // If it's a spicy/naughty question, adjust based on personality
+    if (question.category === 'naughty' || question.category === 'spicy') {
+        if (personality === 'shy') {
+            skipProb += 0.3;
+            answerProb -= 0.2;
+        } else if (personality === 'savage' || personality === 'chaotic') {
+            dareProb += 0.3;
+            answerProb += 0.1;
+        }
+    }
+    
+    // Normalize
+    const total = answerProb + dareProb + skipProb;
+    const rand = Math.random() * total;
+    
+    if (rand < answerProb) return 'answer';
+    if (rand < answerProb + dareProb) return 'dare';
+    return 'skip';
+}
+
+function getBotAvatar(personality) {
+    const avatars = {
+        'shy': '😊',
+        'savage': '😈',
+        'romantic': '🥰',
+        'chaotic': '🤪',
+        'funny': '😂'
+    };
+    return avatars[personality] || '🤖';
+}
+
+function showBotAction(player, action) {
+    DOM.botReaction.classList.remove('hidden');
+    DOM.reactionAvatar.textContent = getBotAvatar(player.personality);
+    DOM.reactionText.textContent = `🤖 ${player.name} ${action}`;
+}
+
+// ============= SPECIAL EVENTS =============
+function showSpecialEvent(event) {
+    DOM.specialEvent.classList.remove('hidden');
+    DOM.eventText.textContent = `${event.icon} ${event.text}`;
+    gameState.specialEventActive = true;
+    
+    // Handle event types
+    switch(event.type) {
+        case 'DOUBLE_DARE':
+            // Current player does two dares - handled by doubling next question
+            showModal('⚡⚡ DOUBLE DARE!', 'You must perform two dares this turn!');
+            setTimeout(closeModal, 2000);
+            break;
+            
+        case 'STEAL_TURN':
+            // Choose another player - for simplicity, we'll auto-select next player
+            const nextIdx = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            gameState.currentPlayerIndex = nextIdx;
+            showModal('🎯 STEAL TURN!', `${gameState.players[nextIdx].name} will answer instead!`);
+            setTimeout(closeModal, 2000);
+            break;
+            
+        case 'GROUP_TRUTH':
+            showModal('💬 GROUP TRUTH!', 'Everyone answers this question!');
+            // Everyone gets points
+            gameState.players.forEach(p => p.score += 1);
+            updatePlayersList();
+            setTimeout(closeModal, 2000);
+            break;
+            
+        case 'SPIN_AGAIN':
+            showModal('🔄 SPIN AGAIN!', 'You get another question!');
+            setTimeout(() => {
+                closeModal();
+                // Get another question
+                const q = getRandomQuestion(gameState.usedQuestions);
+                if (q) {
+                    gameState.currentQuestion = q;
+                    gameState.usedQuestions.push(q.id);
+                    DOM.questionText.textContent = q.text;
+                }
+            }, 1500);
+            break;
+            
+        case 'CHAOS_MODE':
+            gameState.chaosMode = true;
+            showModal('💀 CHAOS MODE ACTIVATED!', 'A random player gets an extreme question!');
+            // Pick random player
+            const randomIdx = Math.floor(Math.random() * gameState.players.length);
+            gameState.currentPlayerIndex = randomIdx;
+            // Get extreme question
+            const extremeQ = getQuestionsByRound(21).filter(q => !gameState.usedQuestions.includes(q.id));
+            if (extremeQ.length > 0) {
+                const q = extremeQ[Math.floor(Math.random() * extremeQ.length)];
+                gameState.currentQuestion = q;
+                gameState.usedQuestions.push(q.id);
+                DOM.questionText.textContent = q.text;
+                DOM.questionCategory.textContent = '💀 EXTREME';
+            }
+            setTimeout(closeModal, 2000);
+            break;
+            
+        case 'SWAP_CHALLENGE':
+            showModal('🔄 SWAP CHALLENGE!', 'Exchange your dare with another player!');
+            // Swap with random player
+            const swapIdx = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            const temp = gameState.players[gameState.currentPlayerIndex];
+            gameState.players[gameState.currentPlayerIndex] = gameState.players[swapIdx];
+            gameState.players[swapIdx] = temp;
+            updatePlayersList();
+            setTimeout(closeModal, 2000);
+            break;
+    }
+    
+    // Hide after 3 seconds if not already handled
+    setTimeout(() => {
+        DOM.specialEvent.classList.add('hidden');
+    }, 3000);
+}
+
+// ============= UI UPDATES =============
+function updatePlayersList() {
+    DOM.playersList.innerHTML = '';
+    gameState.players.forEach((player, index) => {
+        const badge = document.createElement('div');
+        badge.className = 'player-badge';
+        if (index === gameState.currentPlayerIndex && gameState.isGameActive) {
+            badge.classList.add('active');
+        }
+        
+        const avatar = player.isBot ? getBotAvatar(player.personality) : '👤';
+        const nameDisplay = player.isBot ? `🤖 ${player.name}` : player.name;
+        
+        badge.innerHTML = `
+            <span class="avatar">${avatar}</span>
+            <span class="name">${nameDisplay}</span>
+            <span class="score">⭐ ${player.score}</span>
+        `;
+        DOM.playersList.appendChild(badge);
+    });
+}
+
+function addLog(message) {
+    gameState.gameLog.push(message);
+    console.log('[Game Log]', message);
+}
+
+// ============= MODAL =============
+function showModal(title, body) {
+    DOM.modalTitle.textContent = title;
+    DOM.modalBody.textContent = body;
+    DOM.modal.classList.remove('hidden');
+}
+
+function closeModal() {
+    DOM.modal.classList.add('hidden');
+}
+
+// ============= END GAME =============
+function endGame() {
+    gameState.isGameActive = false;
+    clearInterval(gameState.timerInterval);
+    
+    DOM.playArea.classList.add('hidden');
+    DOM.results.classList.remove('hidden');
+    
+    // Sort players by score
+    const sorted = [...gameState.players].sort((a, b) => b.score - a.score);
+    
+    // Stats
+    DOM.resultsStats.innerHTML = `
+        <div class="stat-card">
+            <div class="number">${gameState.currentRound}</div>
+            <div class="label">Rounds</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">${gameState.players.length}</div>
+            <div class="label">Players</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">${sorted[0].score}</div>
+            <div class="label">Highest Score</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">${gameState.mode === 'couple' ? '💕' : '🎉'}</div>
+            <div class="label">${gameState.mode === 'couple' ? 'Couple' : 'Party'} Mode</div>
+        </div>
+    `;
+    
+    // Players
+    DOM.resultsPlayers.innerHTML = '';
+    sorted.forEach((player, index) => {
+        const div = document.createElement('div');
+        div.className = 'result-player';
+        const medals = ['🥇', '🥈', '🥉'];
+        const rank = index < 3 ? medals[index] : `#${index + 1}`;
+        const avatar = player.isBot ? getBotAvatar(player.personality) : '👤';
+        div.innerHTML = `
+            <span class="rank">${rank}</span>
+            <span class="avatar">${avatar}</span>
+            <span class="name">${player.name}</span>
+            <span class="score">⭐ ${player.score}</span>
+        `;
+        DOM.resultsPlayers.appendChild(div);
+    });
+    
+    DOM.statusText.textContent = 'Game Over!';
+    DOM.statusDot.className = 'status-dot waiting';
+}
+
+// ============= EVENT LISTENERS =============
+DOM.answerBtn.addEventListener('click', handleAnswer);
+DOM.dareBtn.addEventListener('click', handleDare);
+DOM.skipBtn.addEventListener('click', handleSkip);
+
+DOM.nextBtn.addEventListener('click', () => {
+    if (!gameState.isProcessing) {
+        nextRound();
+    }
 });
 
-truthBtn.addEventListener('click', () => {
-  currentQuestionType = 'truth';
-  if (truthPool.length === 0) reshufflePools();
-  currentQuestion = truthPool.pop();
-  questionEmoji.innerText = '❤️';
-  questionText.innerText = currentQuestion;
-  showScreen(questionScreen);
-  playSound('click');
-});
-dareBtn.addEventListener('click', () => {
-  currentQuestionType = 'dare';
-  if (darePool.length === 0) reshufflePools();
-  currentQuestion = darePool.pop();
-  questionEmoji.innerText = '🔥';
-  questionText.innerText = currentQuestion;
-  showScreen(questionScreen);
-  playSound('click');
+DOM.endBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to end the game?')) {
+        endGame();
+    }
 });
 
-nextQuestion.addEventListener('click', () => {
-  if (currentQuestionType === 'truth') {
-    if (truthPool.length === 0) reshufflePools();
-    currentQuestion = truthPool.pop();
-    questionEmoji.innerText = '❤️';
-  } else {
-    if (darePool.length === 0) reshufflePools();
-    currentQuestion = darePool.pop();
-    questionEmoji.innerText = '🔥';
-  }
-  questionText.innerText = currentQuestion;
-  confetti();
-  playSound('click');
-});
-spinAgain.addEventListener('click', () => {
-  showScreen(gameScreen);
-  selectedMsg.innerText = '';
-  playSound('click');
+DOM.playAgainBtn.addEventListener('click', () => {
+    DOM.results.classList.add('hidden');
+    DOM.playArea.classList.add('hidden');
+    DOM.mainMenu.classList.remove('hidden');
+    initMenu();
 });
 
-window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+DOM.menuBtn.addEventListener('click', () => {
+    DOM.results.classList.add('hidden');
+    DOM.playArea.classList.add('hidden');
+    DOM.mainMenu.classList.remove('hidden');
+    initMenu();
+});
 
-showScreen(startScreen);
+// Modal close
+DOM.modalClose.addEventListener('click', closeModal);
+DOM.modalAction.addEventListener('click', closeModal);
+DOM.modal.addEventListener('click', (e) => {
+    if (e.target === DOM.modal) closeModal();
+});
+
+// ============= KEYBOARD SHORTCUTS =============
+document.addEventListener('keydown', (e) => {
+    if (e.key === '1') handleAnswer();
+    if (e.key === '2') handleDare();
+    if (e.key === '3') handleSkip();
+    if (e.key === 'Enter') {
+        if (!DOM.modal.classList.contains('hidden')) closeModal();
+    }
+    if (e.key === ' ' && !DOM.modal.classList.contains('hidden')) {
+        e.preventDefault();
+        closeModal();
+    }
+});
+
+// ============= INIT =============
+document.addEventListener('DOMContentLoaded', () => {
+    initSplash();
+});
+
+console.log('🎮 Game Intelligence System loaded!');
+console.log(`📚 ${QUESTION_POOL.length} questions loaded`);
+console.log('🎯 Ready to play!');
