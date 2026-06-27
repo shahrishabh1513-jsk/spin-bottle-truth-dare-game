@@ -1,190 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎮 Game Intelligence System</title>
-  <link rel="stylesheet" href="style.css">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;700&display=swap"
-    rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Truth or Dare — Game Master Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-  <!-- ====== SPLASH SCREEN ====== -->
-  <div id="splashScreen" class="splash-screen">
-    <div class="splash-content">
-      <div class="splash-icon">🎮</div>
-      <h1 class="splash-title">Game Intelligence System</h1>
-      <div class="splash-subtitle">The AI Party Host</div>
-      <div class="splash-loader">
-        <div class="loader-bar"></div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SCREEN 1 — WELCOME
+  ════════════════════════════════════════════════════ -->
+  <div class="screen active" id="s-welcome">
+    <div class="eye-wrap">
+      <div class="eye-out">
+        <div class="eye-in">
+          <div class="pupil"></div>
+        </div>
       </div>
-      <div class="splash-status">Loading game...</div>
-      <button id="enterGameBtn" class="btn-primary splash-btn">🎯 Enter the Game</button>
     </div>
-    <div class="splash-particles" id="splashParticles"></div>
+    <h1 class="game-title">Truth or Dare</h1>
+    <p class="sub">The Game Master is watching...<br>Nobody knows what's coming next.</p>
+    <button class="btn btn-pri" onclick="App.go('s-setup')">Start Game</button>
+    <p class="hint">240+ questions &middot; Smart Game Master &middot; Special Events &middot; 21+ Rounds</p>
   </div>
 
-  <!-- ====== MAIN GAME CONTAINER ====== -->
-  <div id="gameContainer" class="game-container hidden">
-    <!-- Header -->
-    <header class="game-header">
-      <div class="logo">🎮 GIS</div>
-      <div class="game-status" id="gameStatus">
-        <span class="status-dot"></span>
-        <span id="statusText">Ready</span>
-      </div>
-      <div class="header-controls">
-        <button class="icon-btn" id="settingsBtn" title="Settings">⚙️</button>
-        <button class="icon-btn" id="helpBtn" title="Help">❓</button>
-      </div>
-    </header>
+  <!-- ═══════════════════════════════════════════════════
+       SCREEN 2 — SETUP
+  ════════════════════════════════════════════════════ -->
+  <div class="screen" id="s-setup">
+    <div class="setup-box">
+      <h2>Add Players</h2>
+      <p class="sub">2 players = Couple Mode &nbsp;·&nbsp; 3+ players = Party Mode</p>
 
-    <!-- ====== MAIN MENU ====== -->
-    <div id="mainMenu" class="main-menu">
-      <div class="menu-content">
-        <div class="menu-title">
-          <span class="menu-icon">🎮</span>
-          <h2>Game Intelligence System</h2>
-          <p class="menu-subtitle">An unpredictable AI party host</p>
-        </div>
-
-        <!-- Player Setup -->
-        <div class="player-setup">
-          <div class="setup-section">
-            <h3>👥 Players</h3>
-            <div class="player-count-control">
-              <button class="btn-circle" id="decreasePlayers">−</button>
-              <span class="player-count-display" id="playerCountDisplay">2</span>
-              <button class="btn-circle" id="increasePlayers">+</button>
-            </div>
-            <p class="player-count-hint" id="playerCountHint">2 Players • Couple Mode 💕</p>
-          </div>
-
-          <div class="setup-section">
-            <h3>✏️ Player Names</h3>
-            <div id="playerNameInputs" class="player-name-inputs">
-              <!-- Dynamically generated -->
-            </div>
-          </div>
-
-          <div class="setup-section bot-options">
-            <h3>🤖 Bot Personalities</h3>
-            <div class="bot-selectors" id="botSelectors">
-              <!-- Dynamically generated -->
-            </div>
-          </div>
-        </div>
-
-        <button class="btn-primary btn-start" id="startGameBtn">
-          🚀 Start Game
-        </button>
-
-        <div class="game-mode-indicator" id="gameModeIndicator">
-          <span class="mode-badge party-mode">🎉 Party Mode</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ====== GAME PLAY AREA ====== -->
-    <div id="gamePlayArea" class="game-play-area hidden">
-      <!-- Round Info -->
-      <div class="round-info">
-        <div class="round-badge">
-          <span class="round-label">ROUND</span>
-          <span class="round-number" id="roundNumber">1</span>
-        </div>
-        <div class="player-turn">
-          <span class="turn-label">🎯</span>
-          <span class="turn-player" id="turnPlayer">Player 1</span>
-        </div>
-        <div class="intensity-meter">
-          <span class="intensity-label">🔥</span>
-          <div class="meter-bar">
-            <div class="meter-fill" id="intensityFill" style="width: 10%"></div>
-          </div>
-          <span class="intensity-value" id="intensityValue">1</span>
-        </div>
+      <div class="input-row">
+        <input
+          class="inp"
+          id="pinp"
+          type="text"
+          placeholder="Enter player name..."
+          maxlength="18"
+          onkeydown="if(event.key==='Enter') App.addPlayer()"
+        />
+        <button class="btn btn-pri btn-sm" onclick="App.addPlayer()">Add</button>
       </div>
 
-      <!-- Question Card -->
-      <div class="question-card" id="questionCard">
-        <div class="question-category" id="questionCategory">🎯 Ice Breaker</div>
-        <div class="question-text" id="questionText">
-          What's your favorite childhood memory?
-        </div>
-        <div class="question-actions">
-          <button class="btn-secondary btn-answer" id="answerBtn">💬 Answer</button>
-          <button class="btn-secondary btn-dare" id="dareBtn">⚡ Dare</button>
-          <button class="btn-secondary btn-skip" id="skipBtn">⏭️ Skip</button>
-        </div>
-        <div class="question-timer" id="questionTimer">
-          <div class="timer-ring">
-            <svg viewBox="0 0 120 120">
-              <circle class="timer-bg" cx="60" cy="60" r="54" />
-              <circle class="timer-fg" cx="60" cy="60" r="54" id="timerCircle" />
-            </svg>
-            <span class="timer-text" id="timerText">30</span>
-          </div>
-        </div>
+      <div class="scroll-box" id="player-list"></div>
+
+      <div class="divider"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-sec btn-sm" onclick="App.addBot()">+ Add Bot</button>
+        <button class="btn btn-sec btn-sm" onclick="App.clearPlayers()">Clear All</button>
       </div>
 
-      <!-- Bot Reaction -->
-      <div class="bot-reaction hidden" id="botReaction">
-        <div class="reaction-avatar" id="reactionAvatar">🤖</div>
-        <div class="reaction-text" id="reactionText">"Nope, I'm definitely not doing that."</div>
-      </div>
+      <div id="mode-preview" class="mode-preview"></div>
 
-      <!-- Special Event Banner -->
-      <div class="special-event hidden" id="specialEvent">
-        <div class="event-content">
-          <span class="event-icon">💀</span>
-          <span class="event-text" id="eventText">Chaos Mode Activated</span>
-        </div>
-      </div>
-
-      <!-- Players List -->
-      <div class="players-list" id="playersList">
-        <!-- Dynamically generated -->
-      </div>
-
-      <!-- Game Controls -->
-      <div class="game-controls">
-        <button class="btn-secondary btn-next" id="nextBtn">▶ Next Player</button>
-        <button class="btn-secondary btn-end" id="endGameBtn">⏹ End Game</button>
-      </div>
-    </div>
-
-    <!-- ====== RESULTS SCREEN ====== -->
-    <div id="resultsScreen" class="results-screen hidden">
-      <div class="results-content">
-        <h2>🏆 Game Over!</h2>
-        <div class="results-stats" id="resultsStats">
-          <!-- Dynamically generated -->
-        </div>
-        <div class="results-players" id="resultsPlayers">
-          <!-- Dynamically generated -->
-        </div>
-        <button class="btn-primary" id="playAgainBtn">🔄 Play Again</button>
-        <button class="btn-secondary" id="menuBtn">🏠 Main Menu</button>
-      </div>
-    </div>
-
-    <!-- ====== MODALS ====== -->
-    <div id="modal" class="modal hidden">
-      <div class="modal-content">
-        <span class="modal-close" id="modalClose">×</span>
-        <h3 id="modalTitle">Modal</h3>
-        <p id="modalBody">Modal content goes here.</p>
-        <button class="btn-primary" id="modalAction">OK</button>
-      </div>
+      <button class="btn btn-pri btn-full" onclick="App.startGame()">Let the chaos begin 🎲</button>
+      <button class="btn btn-sec btn-sm btn-full" onclick="App.go('s-welcome')" style="margin-top:8px">← Back</button>
     </div>
   </div>
 
-  <script src="questions.js"></script>
-  <script src="script.js"></script>
+  <!-- ═══════════════════════════════════════════════════
+       SCREEN 3 — GAME
+  ════════════════════════════════════════════════════ -->
+  <div class="screen" id="s-game">
+
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div class="round-badge" id="round-badge">Round 1</div>
+      <div class="phase-badge" id="phase-badge">Warm Up</div>
+    </div>
+
+    <div class="game-box">
+
+      <!-- Player chips -->
+      <div class="chips" id="chips"></div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+
+      <!-- Atmosphere + phase -->
+      <div class="atmo-row">
+        <span class="atmo-msg" id="atmo-msg">🎭 The game is watching...</span>
+      </div>
+
+      <!-- Special event banner -->
+      <div id="event-area"></div>
+
+      <!-- Current player label -->
+      <div class="player-turn" id="player-turn"></div>
+
+      <!-- Question card -->
+      <div class="question-card" id="question-card">
+        <div id="cat-tag-area"></div>
+        <p class="question-text" id="question-text">Ready to play...</p>
+      </div>
+
+      <!-- Bot reaction -->
+      <div id="bot-area"></div>
+
+      <!-- Action buttons -->
+      <div class="action-btns" id="action-btns">
+        <button class="btn btn-truth" onclick="App.choose('truth')">Truth</button>
+        <button class="btn btn-dare" onclick="App.choose('dare')">Dare</button>
+        <button class="btn btn-skip btn-sm" onclick="App.nextTurn()">Skip →</button>
+      </div>
+
+      <!-- Footer controls -->
+      <div class="footer-controls">
+        <button class="btn btn-sec btn-sm" onclick="App.showOverlay('o-end')">End Game</button>
+        <button class="btn btn-sec btn-sm" onclick="App.showOverlay('o-scores')">Scores</button>
+      </div>
+
+    </div>
+
+    <!-- OVERLAY: Confirm End -->
+    <div class="overlay" id="o-end">
+      <div class="overlay-card">
+        <div class="overlay-icon">👁️</div>
+        <h2>The Game Master is judging you</h2>
+        <p class="sub">Are you sure you want to quit?</p>
+        <div class="btn-row" style="justify-content:center;margin-top:14px">
+          <button class="btn btn-dare btn-sm" onclick="App.endGame()">End it</button>
+          <button class="btn btn-sec btn-sm" onclick="App.hideOverlay('o-end')">Keep playing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERLAY: Scoreboard -->
+    <div class="overlay" id="o-scores">
+      <div class="overlay-card overlay-wide">
+        <h2>Scoreboard</h2>
+        <div id="score-content" style="margin-top:12px"></div>
+        <button class="btn btn-sec btn-sm btn-full" onclick="App.hideOverlay('o-scores')" style="margin-top:16px">Back to Game</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       SCREEN 4 — END
+  ════════════════════════════════════════════════════ -->
+  <div class="screen" id="s-end">
+    <div class="eye-wrap">
+      <div class="eye-out eye-teal">
+        <div class="eye-in">
+          <div class="pupil"></div>
+        </div>
+      </div>
+    </div>
+    <h1 class="game-title" style="font-size:26px">Game Over</h1>
+    <p class="sub" id="end-summary" style="margin:10px 0 20px;max-width:340px">The Game Master has seen everything.</p>
+    <div id="final-podium" style="width:100%;max-width:360px;margin-bottom:22px"></div>
+    <button class="btn btn-pri" onclick="App.restartGame()" style="width:200px;margin-bottom:10px">Play Again</button>
+    <button class="btn btn-sec btn-sm" onclick="App.go('s-welcome')" style="width:200px">Main Menu</button>
+  </div>
+
+  <script src="game.js"></script>
 </body>
-
 </html>

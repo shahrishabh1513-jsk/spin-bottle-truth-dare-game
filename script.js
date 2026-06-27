@@ -15,23 +15,20 @@ let gameState = {
     timeRemaining: 30,
     skipCount: 0,
     maxSkips: 3,
-    isProcessing: false
+    isProcessing: false,
+    bottleSpinning: false
 };
 
 // ============= DOM REFERENCES =============
 const DOM = {
-    // Splash
     splash: document.getElementById('splashScreen'),
     enterBtn: document.getElementById('enterGameBtn'),
     loader: document.querySelector('.loader-bar'),
     status: document.querySelector('.splash-status'),
-    
-    // Main
     container: document.getElementById('gameContainer'),
-    
-    // Menu
     mainMenu: document.getElementById('mainMenu'),
     playerCountDisplay: document.getElementById('playerCountDisplay'),
+    playerCountBadge: document.getElementById('playerCountBadge'),
     playerCountHint: document.getElementById('playerCountHint'),
     playerNameInputs: document.getElementById('playerNameInputs'),
     botSelectors: document.getElementById('botSelectors'),
@@ -39,8 +36,6 @@ const DOM = {
     modeIndicator: document.getElementById('gameModeIndicator'),
     decreaseBtn: document.getElementById('decreasePlayers'),
     increaseBtn: document.getElementById('increasePlayers'),
-    
-    // Game
     playArea: document.getElementById('gamePlayArea'),
     roundNumber: document.getElementById('roundNumber'),
     turnPlayer: document.getElementById('turnPlayer'),
@@ -61,24 +56,22 @@ const DOM = {
     eventText: document.getElementById('eventText'),
     timerText: document.getElementById('timerText'),
     timerCircle: document.getElementById('timerCircle'),
-    
-    // Results
     results: document.getElementById('resultsScreen'),
     resultsStats: document.getElementById('resultsStats'),
     resultsPlayers: document.getElementById('resultsPlayers'),
     playAgainBtn: document.getElementById('playAgainBtn'),
     menuBtn: document.getElementById('menuBtn'),
-    
-    // Modal
     modal: document.getElementById('modal'),
+    modalIcon: document.getElementById('modalIcon'),
     modalTitle: document.getElementById('modalTitle'),
     modalBody: document.getElementById('modalBody'),
     modalAction: document.getElementById('modalAction'),
     modalClose: document.getElementById('modalClose'),
-    
-    // Status
     statusText: document.getElementById('statusText'),
-    statusDot: document.querySelector('.status-dot')
+    statusDot: document.querySelector('.status-dot'),
+    bottle: document.getElementById('bottle'),
+    bottlePlayers: document.getElementById('bottlePlayers'),
+    bottleContainer: document.getElementById('bottleContainer')
 };
 
 let playerCount = 2;
@@ -89,31 +82,32 @@ let botPersonalities = {};
 function initSplash() {
     let progress = 0;
     const interval = setInterval(() => {
-        progress += Math.random() * 8 + 2;
+        progress += Math.random() * 6 + 1;
         if (progress >= 100) {
             progress = 100;
             clearInterval(interval);
             DOM.status.textContent = 'Ready to play! 🎮';
             DOM.enterBtn.classList.remove('hidden');
+            DOM.enterBtn.style.opacity = '1';
         }
         DOM.loader.style.width = progress + '%';
-        if (progress < 30) DOM.status.textContent = 'Loading game engine...';
-        else if (progress < 60) DOM.status.textContent = 'Generating questions...';
-        else if (progress < 80) DOM.status.textContent = 'Setting up AI...';
+        if (progress < 25) DOM.status.textContent = 'Loading game engine...';
+        else if (progress < 50) DOM.status.textContent = 'Generating questions...';
+        else if (progress < 75) DOM.status.textContent = 'Training AI...';
         else DOM.status.textContent = 'Almost ready...';
-    }, 200);
+    }, 150);
     
     // Particles
     const particlesContainer = document.getElementById('splashParticles');
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 60; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
         particle.style.left = Math.random() * 100 + '%';
-        particle.style.animationDuration = (Math.random() * 10 + 5) + 's';
-        particle.style.animationDelay = (Math.random() * 5) + 's';
+        particle.style.animationDuration = (Math.random() * 12 + 6) + 's';
+        particle.style.animationDelay = (Math.random() * 6) + 's';
         particle.style.width = (Math.random() * 4 + 2) + 'px';
         particle.style.height = particle.style.width;
-        particle.style.opacity = Math.random() * 0.5 + 0.1;
+        particle.style.opacity = Math.random() * 0.4 + 0.1;
         particlesContainer.appendChild(particle);
     }
     
@@ -152,6 +146,7 @@ function initMenu() {
 
 function updatePlayerCount() {
     DOM.playerCountDisplay.textContent = playerCount;
+    DOM.playerCountBadge.textContent = playerCount;
     playerNames = [];
     for (let i = 0; i < playerCount; i++) {
         playerNames.push(`Player ${i + 1}`);
@@ -161,26 +156,29 @@ function updatePlayerCount() {
     
     // Update mode hint
     if (playerCount === 2) {
-        DOM.playerCountHint.textContent = '2 Players • Couple Mode 💕';
-        DOM.modeIndicator.innerHTML = '<span class="mode-badge couple-mode">💕 Couple Mode</span>';
+        DOM.playerCountHint.textContent = '💕 Couple Mode • 2 Players';
+        DOM.modeIndicator.innerHTML = '<span class="mode-badge couple-mode"><span class="mode-icon">💕</span> Couple Mode</span>';
         gameState.mode = 'couple';
     } else {
-        DOM.playerCountHint.textContent = `${playerCount} Players • Party Mode 🎉`;
-        DOM.modeIndicator.innerHTML = '<span class="mode-badge party-mode">🎉 Party Mode</span>';
+        DOM.playerCountHint.textContent = `🎉 Party Mode • ${playerCount} Players`;
+        DOM.modeIndicator.innerHTML = '<span class="mode-badge party-mode"><span class="mode-icon">🎉</span> Party Mode</span>';
         gameState.mode = 'party';
     }
 }
 
 function setupPlayerNameInputs() {
     DOM.playerNameInputs.innerHTML = '';
+    const colors = ['#6C3CE1', '#FF6B6B', '#FFD93D', '#4CAF50', '#2196F3', '#FF9800'];
     for (let i = 0; i < playerCount; i++) {
         const row = document.createElement('div');
         row.className = 'name-input-row';
+        const isBot = i >= 2;
         row.innerHTML = `
-            <label>P${i + 1}</label>
+            <label style="color: ${colors[i % colors.length]}">P${i + 1}</label>
             <input type="text" value="${playerNames[i] || `Player ${i + 1}`}" 
-                   data-index="${i}" placeholder="Enter name...">
-            ${i >= 2 ? '<span class="bot-badge">🤖</span>' : ''}
+                   data-index="${i}" placeholder="Enter name..." 
+                   style="border-color: ${isBot ? 'rgba(108,60,225,0.3)' : 'rgba(255,255,255,0.08)'}">
+            ${isBot ? '<span class="bot-badge">🤖</span>' : ''}
         `;
         const input = row.querySelector('input');
         input.addEventListener('input', (e) => {
@@ -194,11 +192,12 @@ function setupBotSelectors() {
     DOM.botSelectors.innerHTML = '';
     const personalities = ['Shy', 'Savage', 'Romantic', 'Chaotic', 'Funny'];
     const emojis = ['😊', '😈', '🥰', '🤪', '😂'];
+    const colors = ['#6C3CE1', '#FF6B6B', '#FFD93D', '#4CAF50', '#2196F3'];
     
     for (let i = 2; i < playerCount; i++) {
         const container = document.createElement('div');
-        container.style.cssText = 'display: flex; align-items: center; gap: 8px; margin-top: 4px;';
-        container.innerHTML = `<span style="font-size: 13px; color: var(--text-secondary);">${playerNames[i] || `Player ${i+1}`}:</span>`;
+        container.style.cssText = 'display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; justify-content: center;';
+        container.innerHTML = `<span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">${playerNames[i] || `Player ${i+1}`}:</span>`;
         
         personalities.forEach((name, idx) => {
             const btn = document.createElement('button');
@@ -206,30 +205,37 @@ function setupBotSelectors() {
             btn.dataset.player = i;
             btn.dataset.personality = name.toLowerCase();
             btn.textContent = `${emojis[idx]} ${name}`;
-            if (idx === 0) btn.classList.add('active');
-            btn.addEventListener('click', () => {
-                container.querySelectorAll('.bot-selector').forEach(b => b.classList.remove('active'));
+            btn.style.borderColor = idx === 0 ? colors[idx] : 'rgba(255,255,255,0.08)';
+            if (idx === 0) {
                 btn.classList.add('active');
+                btn.style.borderColor = colors[idx];
+            }
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.bot-selector').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.borderColor = 'rgba(255,255,255,0.08)';
+                });
+                btn.classList.add('active');
+                btn.style.borderColor = colors[idx];
                 botPersonalities[i] = name.toLowerCase();
             });
             container.appendChild(btn);
         });
         DOM.botSelectors.appendChild(container);
         
-        // Set default
-        botPersonalities[i] = 'shy';
+        if (!botPersonalities[i]) {
+            botPersonalities[i] = 'shy';
+        }
     }
 }
 
 // ============= GAME START =============
 function startGame() {
-    // Collect final names
     const inputs = DOM.playerNameInputs.querySelectorAll('input');
     inputs.forEach((input, index) => {
         playerNames[index] = input.value || `Player ${index + 1}`;
     });
     
-    // Create players
     gameState.players = [];
     for (let i = 0; i < playerCount; i++) {
         const isBot = i >= 2;
@@ -239,11 +245,11 @@ function startGame() {
             isBot: isBot,
             personality: personality,
             score: 0,
-            isActive: true
+            isActive: true,
+            color: ['#6C3CE1', '#FF6B6B', '#FFD93D', '#4CAF50', '#2196F3', '#FF9800'][i]
         });
     }
     
-    // Set mode
     gameState.mode = playerCount === 2 ? 'couple' : 'party';
     gameState.currentRound = 0;
     gameState.currentPlayerIndex = 0;
@@ -253,13 +259,74 @@ function startGame() {
     gameState.skipCount = 0;
     gameState.isProcessing = false;
     
-    // Hide menu, show game
     DOM.mainMenu.classList.add('hidden');
     DOM.playArea.classList.remove('hidden');
     DOM.results.classList.add('hidden');
     
-    // Start first round
+    // Setup bottle players
+    setupBottlePlayers();
+    
     nextRound();
+}
+
+// ============= BOTTLE PLAYER MARKERS =============
+function setupBottlePlayers() {
+    DOM.bottlePlayers.innerHTML = '';
+    const count = gameState.players.length;
+    const radius = 140;
+    const centerX = 180;
+    const centerY = 180;
+    
+    gameState.players.forEach((player, index) => {
+        const angle = (index / count) * 2 * Math.PI - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle) - 18;
+        const y = centerY + radius * Math.sin(angle) - 18;
+        
+        const marker = document.createElement('div');
+        marker.className = 'bottle-player-marker';
+        marker.id = `marker-${index}`;
+        marker.style.left = x + 'px';
+        marker.style.top = y + 'px';
+        marker.style.borderColor = player.color;
+        marker.style.color = player.color;
+        marker.textContent = player.name.charAt(0).toUpperCase();
+        marker.title = player.name;
+        
+        DOM.bottlePlayers.appendChild(marker);
+    });
+}
+
+function highlightBottlePlayer(index) {
+    document.querySelectorAll('.bottle-player-marker').forEach(el => {
+        el.classList.remove('highlight');
+    });
+    const marker = document.getElementById(`marker-${index}`);
+    if (marker) {
+        marker.classList.add('highlight');
+        // Spin bottle to face the player
+        spinBottleTo(index);
+    }
+}
+
+function spinBottleTo(index) {
+    if (gameState.bottleSpinning) return;
+    gameState.bottleSpinning = true;
+    
+    const bottle = DOM.bottle;
+    bottle.classList.remove('spinning');
+    
+    // Force reflow
+    void bottle.offsetWidth;
+    
+    const count = gameState.players.length;
+    const targetAngle = (index / count) * 360 + 360 * (2 + Math.random() * 2);
+    
+    bottle.style.transition = 'transform 3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    bottle.style.transform = `rotate(${targetAngle}deg)`;
+    
+    setTimeout(() => {
+        gameState.bottleSpinning = false;
+    }, 3200);
 }
 
 // ============= GAME ROUNDS =============
@@ -269,7 +336,6 @@ function nextRound() {
     gameState.currentRound++;
     DOM.roundNumber.textContent = gameState.currentRound;
     
-    // Check if game should end
     if (gameState.currentRound > 30) {
         endGame();
         return;
@@ -280,9 +346,7 @@ function nextRound() {
     DOM.intensityFill.style.width = (intensity * 10) + '%';
     DOM.intensityValue.textContent = intensity;
     
-    // Get next player
     if (gameState.specialEventActive) {
-        // If special event handled, reset
         gameState.specialEventActive = false;
     } else {
         gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
@@ -291,97 +355,77 @@ function nextRound() {
     const player = gameState.players[gameState.currentPlayerIndex];
     DOM.turnPlayer.textContent = player.name;
     
-    // Update players list
-    updatePlayersList();
+    // Highlight player in bottle
+    highlightBottlePlayer(gameState.currentPlayerIndex);
     
-    // Select question
+    updatePlayersList();
     selectQuestion();
     
-    // Update status
     DOM.statusText.textContent = `${player.name}'s turn`;
     DOM.statusDot.className = 'status-dot playing';
     
-    // Start timer
     startTimer();
 }
 
 function selectQuestion() {
-    // Get weighted category
     const category = getWeightedCategory(
         gameState.currentRound, 
         gameState.players.length, 
         gameState.mode
     );
     
-    // Get questions for this round
     let availableQuestions = getQuestionsByRound(gameState.currentRound)
-        .filter(q => q.category === category || Math.random() < 0.3) // Some randomness
+        .filter(q => q.category === category || Math.random() < 0.3)
         .filter(q => !gameState.usedQuestions.includes(q.id));
     
-    // If no questions available, get any question
     if (availableQuestions.length === 0) {
-        availableQuestions = getRandomQuestion(gameState.usedQuestions);
-        if (availableQuestions) availableQuestions = [availableQuestions];
+        const fallback = getRandomQuestion(gameState.usedQuestions);
+        if (fallback) availableQuestions = [fallback];
     }
     
     if (availableQuestions.length === 0) {
-        // If truly no questions, end game
         endGame();
         return;
     }
     
-    // Pick random question
     const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
     gameState.currentQuestion = question;
     gameState.usedQuestions.push(question.id);
     
-    // Display question
     const categoryEmojis = {
-        'cute': '🥰',
-        'funny': '😂',
-        'party': '🎉',
-        'adventure': '🏔️',
-        'friendship': '🤝',
-        'romantic': '💕',
-        'couple': '💑',
-        'flirty': '😉',
-        'embarrassing': '😳',
-        'deep_talk': '🧠',
-        'naughty': '😈',
-        'dark_humor': '💀',
-        'relationship': '💞',
-        'ice_breaker': '❄️',
-        'spicy': '🌶️'
+        'cute': '🥰', 'funny': '😂', 'party': '🎉', 'adventure': '🏔️',
+        'friendship': '🤝', 'romantic': '💕', 'couple': '💑', 'flirty': '😉',
+        'embarrassing': '😳', 'deep_talk': '🧠', 'naughty': '😈',
+        'dark_humor': '💀', 'relationship': '💞', 'ice_breaker': '❄️', 'spicy': '🌶️'
     };
     
     const emoji = categoryEmojis[question.category] || '🎯';
     const categoryName = question.category.replace('_', ' ').toUpperCase();
-    DOM.questionCategory.textContent = `${emoji} ${categoryName}`;
+    DOM.questionCategory.innerHTML = `<span class="category-icon">${emoji}</span><span class="category-text">${categoryName}</span>`;
     DOM.questionText.textContent = question.text;
     
-    // Show/hide buttons based on question type
     if (question.isDare) {
         DOM.dareBtn.style.display = 'none';
-        DOM.answerBtn.textContent = '⚡ Accept Dare';
+        DOM.answerBtn.querySelector('.action-text').textContent = 'Accept Dare';
+        DOM.answerBtn.querySelector('.action-icon').textContent = '⚡';
     } else {
-        DOM.dareBtn.style.display = 'inline-block';
-        DOM.answerBtn.textContent = '💬 Answer';
+        DOM.dareBtn.style.display = 'flex';
+        DOM.answerBtn.querySelector('.action-text').textContent = 'Answer';
+        DOM.answerBtn.querySelector('.action-icon').textContent = '💬';
     }
     
-    // Check for special event
     const event = triggerSpecialEvent();
-    if (event && gameState.currentRound > 3) {
+    if (event && gameState.currentRound > 3 && Math.random() < 0.15) {
         showSpecialEvent(event);
     }
     
-    // Bot reaction if bot's turn
     const player = gameState.players[gameState.currentPlayerIndex];
     if (player.isBot) {
+        DOM.botReaction.classList.add('hidden');
         setTimeout(() => {
             handleBotTurn(player);
         }, 1500);
     } else {
-        // Hide bot reaction for human
         DOM.botReaction.classList.add('hidden');
     }
 }
@@ -394,6 +438,7 @@ function startTimer() {
     const circumference = 2 * Math.PI * 54;
     DOM.timerCircle.style.strokeDasharray = circumference;
     DOM.timerCircle.style.strokeDashoffset = 0;
+    DOM.timerCircle.style.stroke = '#6C3CE1';
     
     gameState.timerInterval = setInterval(() => {
         gameState.timeRemaining--;
@@ -405,13 +450,10 @@ function startTimer() {
         
         if (gameState.timeRemaining <= 5) {
             DOM.timerCircle.style.stroke = '#FF6B6B';
-        } else {
-            DOM.timerCircle.style.stroke = '#6C3CE1';
         }
         
         if (gameState.timeRemaining <= 0) {
             clearInterval(gameState.timerInterval);
-            // Auto-skip if no answer
             handleTimeout();
         }
     }, 1000);
@@ -422,7 +464,7 @@ function handleTimeout() {
     gameState.isProcessing = true;
     
     const player = gameState.players[gameState.currentPlayerIndex];
-    showModal('⏰ Time\'s Up!', `${player.name} ran out of time! Moving to next player.`);
+    showModal('⏰', 'Time\'s Up!', `${player.name} ran out of time! Moving to next player.`);
     
     setTimeout(() => {
         closeModal();
@@ -442,13 +484,12 @@ function handleAnswer() {
     
     const question = gameState.currentQuestion;
     if (question.isDare) {
-        // Handle dare
         player.score += 2;
-        showModal('⚡ Dare Accepted!', `${player.name} accepted the dare and gained 2 points!`);
+        showModal('⚡', 'Dare Accepted!', `${player.name} accepted the dare and gained 2 points!`);
         addLog(`${player.name} accepted a dare: ${question.text}`);
     } else {
         player.score += 1;
-        showModal('💬 Answered!', `${player.name} answered the question and gained 1 point!`);
+        showModal('💬', 'Answered!', `${player.name} answered the question and gained 1 point!`);
         addLog(`${player.name} answered: ${question.text}`);
     }
     
@@ -469,7 +510,6 @@ function handleDare() {
     gameState.isProcessing = true;
     clearInterval(gameState.timerInterval);
     
-    // Find a dare question
     const dareQuestions = getQuestionsByRound(gameState.currentRound)
         .filter(q => q.isDare && !gameState.usedQuestions.includes(q.id));
     
@@ -478,19 +518,19 @@ function handleDare() {
         gameState.usedQuestions.push(dare.id);
         gameState.currentQuestion = dare;
         DOM.questionText.textContent = dare.text;
-        DOM.questionCategory.textContent = '⚡ DARE';
-        DOM.answerBtn.textContent = '⚡ Accept Dare';
+        DOM.questionCategory.innerHTML = '<span class="category-icon">⚡</span><span class="category-text">DARE</span>';
+        DOM.answerBtn.querySelector('.action-text').textContent = 'Accept Dare';
+        DOM.answerBtn.querySelector('.action-icon').textContent = '⚡';
         DOM.dareBtn.style.display = 'none';
         
-        showModal('⚡ New Dare!', `A new dare has been issued for ${player.name}!`);
+        showModal('⚡', 'New Dare!', `A new dare has been issued for ${player.name}!`);
         
         setTimeout(() => {
             closeModal();
             gameState.isProcessing = false;
-            // Let them answer the dare
         }, 1500);
     } else {
-        showModal('😅 No Dares Available', 'There are no dares available right now. Try answering the question!');
+        showModal('😅', 'No Dares Available', 'There are no dares available right now. Try answering the question!');
         setTimeout(() => {
             closeModal();
             gameState.isProcessing = false;
@@ -505,7 +545,7 @@ function handleSkip() {
     
     gameState.skipCount++;
     if (gameState.skipCount >= gameState.maxSkips) {
-        showModal('🚫 No More Skips!', 'You\'ve used all your skips! You must answer or accept a dare.');
+        showModal('🚫', 'No More Skips!', 'You\'ve used all your skips! You must answer or accept a dare.');
         setTimeout(() => {
             closeModal();
         }, 2000);
@@ -516,7 +556,7 @@ function handleSkip() {
     clearInterval(gameState.timerInterval);
     
     player.score -= 1;
-    showModal('⏭️ Skipped!', `${player.name} skipped the question. -1 point! (${gameState.skipCount}/${gameState.maxSkips} skips used)`);
+    showModal('⏭️', 'Skipped!', `${player.name} skipped the question. -1 point! (${gameState.skipCount}/${gameState.maxSkips} skips used)`);
     addLog(`${player.name} skipped a question`);
     
     updatePlayersList();
@@ -536,14 +576,12 @@ function handleBotTurn(player) {
     clearInterval(gameState.timerInterval);
     gameState.isProcessing = true;
     
-    // Show bot reaction
     const question = gameState.currentQuestion;
     const reaction = getBotReaction(player.personality, question);
     DOM.botReaction.classList.remove('hidden');
     DOM.reactionAvatar.textContent = getBotAvatar(player.personality);
     DOM.reactionText.textContent = `"${reaction}"`;
     
-    // Bot decision making based on personality
     setTimeout(() => {
         const decision = makeBotDecision(player, question);
         
@@ -555,7 +593,7 @@ function handleBotTurn(player) {
             player.score += 2;
             addLog(`${player.name} (bot) accepted a dare`);
             showBotAction(player, 'accepted the dare! ⚡');
-        } else if (decision === 'skip') {
+        } else {
             player.score -= 1;
             addLog(`${player.name} (bot) skipped`);
             showBotAction(player, 'skipped the question. ⏭️');
@@ -575,66 +613,38 @@ function makeBotDecision(player, question) {
     const personality = player.personality || 'shy';
     const intensity = Math.min(Math.floor(gameState.currentRound / 2) + 1, 10);
     
-    // Base probabilities
-    let answerProb = 0.5;
-    let dareProb = 0.2;
-    let skipProb = 0.3;
+    let answerProb = 0.5, dareProb = 0.2, skipProb = 0.3;
     
-    // Adjust based on personality
     switch(personality) {
-        case 'savage':
-            answerProb = 0.6;
-            dareProb = 0.3;
-            skipProb = 0.1;
-            break;
-        case 'shy':
-            answerProb = 0.4;
-            dareProb = 0.1;
-            skipProb = 0.5;
-            break;
-        case 'romantic':
-            answerProb = 0.7;
-            dareProb = 0.1;
-            skipProb = 0.2;
-            break;
-        case 'chaotic':
-            answerProb = 0.3;
-            dareProb = 0.5;
-            skipProb = 0.2;
-            break;
-        case 'funny':
-            answerProb = 0.5;
-            dareProb = 0.25;
-            skipProb = 0.25;
-            break;
+        case 'savage': answerProb = 0.6; dareProb = 0.3; skipProb = 0.1; break;
+        case 'shy': answerProb = 0.4; dareProb = 0.1; skipProb = 0.5; break;
+        case 'romantic': answerProb = 0.7; dareProb = 0.1; skipProb = 0.2; break;
+        case 'chaotic': answerProb = 0.3; dareProb = 0.5; skipProb = 0.2; break;
+        case 'funny': answerProb = 0.5; dareProb = 0.25; skipProb = 0.25; break;
     }
     
-    // Adjust for question type
     if (question.isDare) {
         answerProb = 0;
         dareProb = 0.7;
         skipProb = 0.3;
     }
     
-    // Adjust for intensity
     if (intensity > 7) {
         skipProb += 0.2;
         answerProb -= 0.1;
         dareProb -= 0.1;
     }
     
-    // If it's a spicy/naughty question, adjust based on personality
-    if (question.category === 'naughty' || question.category === 'spicy') {
+    if (['naughty', 'spicy'].includes(question.category)) {
         if (personality === 'shy') {
             skipProb += 0.3;
             answerProb -= 0.2;
-        } else if (personality === 'savage' || personality === 'chaotic') {
+        } else if (['savage', 'chaotic'].includes(personality)) {
             dareProb += 0.3;
             answerProb += 0.1;
         }
     }
     
-    // Normalize
     const total = answerProb + dareProb + skipProb;
     const rand = Math.random() * total;
     
@@ -644,13 +654,7 @@ function makeBotDecision(player, question) {
 }
 
 function getBotAvatar(personality) {
-    const avatars = {
-        'shy': '😊',
-        'savage': '😈',
-        'romantic': '🥰',
-        'chaotic': '🤪',
-        'funny': '😂'
-    };
+    const avatars = { 'shy': '😊', 'savage': '😈', 'romantic': '🥰', 'chaotic': '🤪', 'funny': '😂' };
     return avatars[personality] || '🤖';
 }
 
@@ -666,35 +670,43 @@ function showSpecialEvent(event) {
     DOM.eventText.textContent = `${event.icon} ${event.text}`;
     gameState.specialEventActive = true;
     
-    // Handle event types
+    // Create event particles
+    const particlesContainer = DOM.specialEvent.querySelector('.event-particles');
+    particlesContainer.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+        const span = document.createElement('span');
+        const angle = (i / 12) * 2 * Math.PI;
+        const dist = 60 + Math.random() * 60;
+        span.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+        span.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+        span.style.animationDelay = (Math.random() * 2) + 's';
+        span.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+        span.style.width = (4 + Math.random() * 6) + 'px';
+        span.style.height = span.style.width;
+        particlesContainer.appendChild(span);
+    }
+    
     switch(event.type) {
         case 'DOUBLE_DARE':
-            // Current player does two dares - handled by doubling next question
-            showModal('⚡⚡ DOUBLE DARE!', 'You must perform two dares this turn!');
+            showModal('⚡⚡', 'DOUBLE DARE!', 'You must perform two dares this turn!');
             setTimeout(closeModal, 2000);
             break;
-            
         case 'STEAL_TURN':
-            // Choose another player - for simplicity, we'll auto-select next player
             const nextIdx = (gameState.currentPlayerIndex + 1) % gameState.players.length;
             gameState.currentPlayerIndex = nextIdx;
-            showModal('🎯 STEAL TURN!', `${gameState.players[nextIdx].name} will answer instead!`);
+            showModal('🎯', 'STEAL TURN!', `${gameState.players[nextIdx].name} will answer instead!`);
             setTimeout(closeModal, 2000);
             break;
-            
         case 'GROUP_TRUTH':
-            showModal('💬 GROUP TRUTH!', 'Everyone answers this question!');
-            // Everyone gets points
+            showModal('💬', 'GROUP TRUTH!', 'Everyone answers this question!');
             gameState.players.forEach(p => p.score += 1);
             updatePlayersList();
             setTimeout(closeModal, 2000);
             break;
-            
         case 'SPIN_AGAIN':
-            showModal('🔄 SPIN AGAIN!', 'You get another question!');
+            showModal('🔄', 'SPIN AGAIN!', 'You get another question!');
             setTimeout(() => {
                 closeModal();
-                // Get another question
                 const q = getRandomQuestion(gameState.usedQuestions);
                 if (q) {
                     gameState.currentQuestion = q;
@@ -703,41 +715,36 @@ function showSpecialEvent(event) {
                 }
             }, 1500);
             break;
-            
         case 'CHAOS_MODE':
             gameState.chaosMode = true;
-            showModal('💀 CHAOS MODE ACTIVATED!', 'A random player gets an extreme question!');
-            // Pick random player
+            showModal('💀', 'CHAOS MODE ACTIVATED!', 'A random player gets an extreme question!');
             const randomIdx = Math.floor(Math.random() * gameState.players.length);
             gameState.currentPlayerIndex = randomIdx;
-            // Get extreme question
             const extremeQ = getQuestionsByRound(21).filter(q => !gameState.usedQuestions.includes(q.id));
             if (extremeQ.length > 0) {
                 const q = extremeQ[Math.floor(Math.random() * extremeQ.length)];
                 gameState.currentQuestion = q;
                 gameState.usedQuestions.push(q.id);
                 DOM.questionText.textContent = q.text;
-                DOM.questionCategory.textContent = '💀 EXTREME';
+                DOM.questionCategory.innerHTML = '<span class="category-icon">💀</span><span class="category-text">EXTREME</span>';
             }
             setTimeout(closeModal, 2000);
             break;
-            
         case 'SWAP_CHALLENGE':
-            showModal('🔄 SWAP CHALLENGE!', 'Exchange your dare with another player!');
-            // Swap with random player
+            showModal('🔄', 'SWAP CHALLENGE!', 'Exchange your dare with another player!');
             const swapIdx = (gameState.currentPlayerIndex + 1) % gameState.players.length;
             const temp = gameState.players[gameState.currentPlayerIndex];
             gameState.players[gameState.currentPlayerIndex] = gameState.players[swapIdx];
             gameState.players[swapIdx] = temp;
             updatePlayersList();
+            setupBottlePlayers();
             setTimeout(closeModal, 2000);
             break;
     }
     
-    // Hide after 3 seconds if not already handled
     setTimeout(() => {
         DOM.specialEvent.classList.add('hidden');
-    }, 3000);
+    }, 3500);
 }
 
 // ============= UI UPDATES =============
@@ -751,11 +758,9 @@ function updatePlayersList() {
         }
         
         const avatar = player.isBot ? getBotAvatar(player.personality) : '👤';
-        const nameDisplay = player.isBot ? `🤖 ${player.name}` : player.name;
-        
         badge.innerHTML = `
             <span class="avatar">${avatar}</span>
-            <span class="name">${nameDisplay}</span>
+            <span class="name" style="color: ${player.color}">${player.name}</span>
             <span class="score">⭐ ${player.score}</span>
         `;
         DOM.playersList.appendChild(badge);
@@ -768,7 +773,8 @@ function addLog(message) {
 }
 
 // ============= MODAL =============
-function showModal(title, body) {
+function showModal(icon, title, body) {
+    DOM.modalIcon.textContent = icon;
     DOM.modalTitle.textContent = title;
     DOM.modalBody.textContent = body;
     DOM.modal.classList.remove('hidden');
@@ -786,10 +792,8 @@ function endGame() {
     DOM.playArea.classList.add('hidden');
     DOM.results.classList.remove('hidden');
     
-    // Sort players by score
     const sorted = [...gameState.players].sort((a, b) => b.score - a.score);
     
-    // Stats
     DOM.resultsStats.innerHTML = `
         <div class="stat-card">
             <div class="number">${gameState.currentRound}</div>
@@ -809,7 +813,6 @@ function endGame() {
         </div>
     `;
     
-    // Players
     DOM.resultsPlayers.innerHTML = '';
     sorted.forEach((player, index) => {
         const div = document.createElement('div');
@@ -820,7 +823,7 @@ function endGame() {
         div.innerHTML = `
             <span class="rank">${rank}</span>
             <span class="avatar">${avatar}</span>
-            <span class="name">${player.name}</span>
+            <span class="name" style="color: ${player.color}">${player.name}</span>
             <span class="score">⭐ ${player.score}</span>
         `;
         DOM.resultsPlayers.appendChild(div);
@@ -861,7 +864,6 @@ DOM.menuBtn.addEventListener('click', () => {
     initMenu();
 });
 
-// Modal close
 DOM.modalClose.addEventListener('click', closeModal);
 DOM.modalAction.addEventListener('click', closeModal);
 DOM.modal.addEventListener('click', (e) => {
@@ -873,9 +875,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === '1') handleAnswer();
     if (e.key === '2') handleDare();
     if (e.key === '3') handleSkip();
-    if (e.key === 'Enter') {
-        if (!DOM.modal.classList.contains('hidden')) closeModal();
-    }
+    if (e.key === 'Enter' && !DOM.modal.classList.contains('hidden')) closeModal();
     if (e.key === ' ' && !DOM.modal.classList.contains('hidden')) {
         e.preventDefault();
         closeModal();
@@ -888,5 +888,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('🎮 Game Intelligence System loaded!');
-console.log(`📚 ${QUESTION_POOL.length} questions loaded`);
+console.log(`📚 ${window.QUESTION_POOL?.length || 0} questions loaded`);
 console.log('🎯 Ready to play!');
